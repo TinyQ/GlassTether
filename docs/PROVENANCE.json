@@ -1,0 +1,19 @@
+{
+  "source_project": "LiveMateBluetoothLab",
+  "source_commit": "8eefa1efdec1baa71fba8c4ede470c31fb8a2314",
+  "source_branch": "codex/absolute-hid-probe",
+  "files": {
+    "Package.swift": "5d2620ec75922868a90bb51acdb300cb0548c2cdd02fba8af5ee6e8bbb7ee5c1",
+    "script/build.sh": "1446621288b1d996d3adbe9e23adaeeb47cdb85b85f0c5633e4b1e8ed14fc39c",
+    "script/Lab.entitlements": "71501d9ed23644b3577c7982a5677a4ebb17bd6cc4684e354c021843eb674ca9",
+    "Sources/PhoneControlCore/MouseTransport.swift": "29db8cf98b2caae933fd8f35f4e1022572bb53d6637c11419fa02008b5361399",
+    "Sources/PhoneControlCore/AbsoluteMouse.swift": "7b43d587d4846a8d7686be8b58a7a01d359e731ea541a7cf2e8f7a32b06156a0",
+    "Sources/BluetoothLab/PhoneSurface.swift": "3f3a762c81b774851e8969cf42ac7acdf9e1d7e08f83b901af2b2becd1b73646",
+    "Sources/BluetoothLab/CoreMediaIODeviceDiscovery.swift": "64e6fd56b070d70dd50d5c6b9fff6c23e79cc8f09b28e4b75f8ba6906cedbe84",
+    "Sources/BluetoothLab/BluetoothMouse.swift": "34f40ad2046483fc930db26404f3227bc08787f213bdde9e8e80079fda056d8c",
+    "Sources/BluetoothLab/LabApp.swift": "6f44a3971d7b104f4cb012ed461dc2cc6839f8023dc08936cee07a3afa73109c",
+    "Sources/BluetoothLab/USBPreview.swift": "404fe982990a683c334f68703f9a8f20172dfd9dc362f79bf5713281fc9ab93d",
+    "Tests/PhoneControlCoreTests/MouseTransportTests.swift": "6dbe563533acc6658730f0158e0cdbd9346018afbff9753b30454e2d9b068fe9",
+    "Tests/PhoneControlCoreTests/AbsoluteMouseTests.swift": "d5996d38c4c3298ea95e0c4d15ed27eea8232e5e38a663eb9e3468e1b2d60842"
+  }
+}
