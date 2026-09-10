@@ -2,12 +2,11 @@
 import PackageDescription
 
 let package = Package(
-  name: "LiveMateBluetoothLab",
-  platforms: [.macOS(.v14)],
-  products: [.executable(name: "LiveMateBluetoothLab", targets: ["BluetoothLab"])],
+  name: "GlassTether", platforms: [.macOS(.v14)],
+  products: [.executable(name: "GlassTether", targets: ["GlassTether"])],
   targets: [
     .target(name: "PhoneControlCore"),
-    .executableTarget(name: "BluetoothLab", dependencies: ["PhoneControlCore"]),
+    .executableTarget(name: "GlassTether", dependencies: ["PhoneControlCore"]),
     .testTarget(name: "PhoneControlCoreTests", dependencies: ["PhoneControlCore"]),
   ]
 )

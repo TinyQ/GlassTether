@@ -7,13 +7,11 @@ import PhoneControlCore
 // CoreBluetooth is explicitly configured to deliver every delegate callback on .main.
 final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeripheralManagerDelegate
 {
-  @Published private(set) var status = "蓝牙尚未启动"
+  @Published private(set) var status = "Bluetooth is off"
   @Published private(set) var connected = false
   @Published private(set) var running = false
   @Published var compactDiscovery = true
-  @Published var absoluteMode = true
-  private(set) var activeAbsolute = true
-  @Published private(set) var discoveryStatus = "服务尚未注册"
+  @Published private(set) var discoveryStatus = "No services registered"
   private var advertisingCompact = true
   private var registeredServices = 0
   var onReset: (() -> Void)?
@@ -22,7 +20,6 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
   private var targetID: UUID?
   private var report: CBMutableCharacteristic?
   private var services: [CBMutableService] = []
-  private var transport = MouseTransport()
   private var absoluteTransport = AbsoluteTransport()
   private var suspended = false
 
@@ -33,12 +30,11 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
   func start() {
     guard !running else { return }
     running = true
-    activeAbsolute = absoluteMode
     absoluteTransport.reset()
     advertisingCompact = compactDiscovery
     registeredServices = 0
-    discoveryStatus = "正在准备服务"
-    status = "正在初始化蓝牙…"
+    discoveryStatus = "Preparing mouse service"
+    status = "Starting Bluetooth…"
     // An explicit user action constructs the manager and requests permission.
     manager = CBPeripheralManager(delegate: self, queue: .main)
   }
@@ -56,67 +52,46 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
     services = []
     connected = false
     running = false
-    discoveryStatus = "广播已停止"
-    status = "蓝牙已停止"
-  }
-
-  func send(buttons: UInt8, x: Double = 0, y: Double = 0, wheel: Double = 0) {
-    guard connected, !suspended, !activeAbsolute else { return }
-    if !transport.enqueue(buttons: buttons, x: x, y: y, wheel: wheel) {
-      status = "输入积压已清空，请重新开启控制"
-      onReset?()
-    }
-    flush()
+    discoveryStatus = "Advertising stopped"
+    status = "Bluetooth stopped"
   }
 
   func sendAbsolute(buttons: UInt8, position: AbsolutePosition, wheel: Double = 0) {
-    guard connected, !suspended, activeAbsolute else { return }
+    guard connected, !suspended else { return }
     if !absoluteTransport.enqueue(buttons: buttons, position: position, wheel: wheel) {
-      status = "输入积压已清空，请重新开启控制"
+      status = "Input queue reset. Enable control again."
       onReset?()
     }
     flush()
   }
 
-  func probe(x: Double, y: Double) {
-    guard let position = AbsolutePosition.map(x: x, y: y, width: 1, height: 1) else { return }
-    release()
-    sendAbsolute(buttons: 0, position: position)
-  }
-
   func release() {
-    transport.release()
     absoluteTransport.release()
     flush()
   }
 
   private func flush() {
     guard let manager, let target, let report else { return }
-    if activeAbsolute {
-      absoluteTransport.drain {
-        manager.updateValue($0.data, for: report, onSubscribedCentrals: [target])
-      }
-    } else {
-      transport.drain { manager.updateValue($0.data, for: report, onSubscribedCentrals: [target]) }
+    absoluteTransport.drain {
+      manager.updateValue($0.data, for: report, onSubscribedCentrals: [target])
     }
   }
 
   func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
     guard peripheral === manager else { return }
     guard peripheral.state == .poweredOn else {
-      discoveryStatus = "蓝牙不可用，尚未建立鼠标连接"
+      discoveryStatus = "Bluetooth unavailable; mouse disconnected"
       connected = false
       target = nil
       report = nil
       services = []
-      transport.release()
       absoluteTransport.release()
       onReset?()
       switch peripheral.state {
-      case .poweredOff: status = "请打开 Mac 蓝牙"
-      case .unauthorized: status = "请在系统设置允许本原型使用蓝牙"
-      case .unsupported: status = "此 Mac 不支持 BLE 外设模式"
-      default: status = "蓝牙暂不可用"
+      case .poweredOff: status = "Turn on Bluetooth on your Mac"
+      case .unauthorized: status = "Allow GlassTether to use Bluetooth in System Settings"
+      case .unsupported: status = "This Mac does not support BLE peripheral mode"
+      default: status = "Bluetooth is unavailable"
       }
       return
     }
@@ -137,22 +112,14 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
     information.characteristics = [
       CBMutableCharacteristic(
         type: uuid("2A29"), properties: .read,
-        value: Data("LiveMate Lab".utf8), permissions: .readable),
+        value: Data("GlassTether Preview".utf8), permissions: .readable),
       // Prototype identity only; 0xFFFF is not a production vendor assignment.
       CBMutableCharacteristic(
         type: uuid("2A50"), properties: .read,
-        value: Data([0x01, 0xFF, 0xFF, activeAbsolute ? 0x02 : 0x01, 0x00, 0x00, 0x01]),
+        value: Data([0x01, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x01]),
         permissions: .readable),
     ]
     let hid = CBMutableService(type: uuid("1812"), primary: true)
-    // Standard three-button relative mouse; Report Reference supplies ID 1.
-    let relativeDescriptor: [UInt8] = [
-      0x05, 0x01, 0x09, 0x02, 0xA1, 0x01, 0x85, 0x01, 0x09, 0x01, 0xA1, 0x00,
-      0x05, 0x09, 0x19, 0x01, 0x29, 0x03, 0x15, 0x00, 0x25, 0x01, 0x95, 0x03,
-      0x75, 0x01, 0x81, 0x02, 0x95, 0x01, 0x75, 0x05, 0x81, 0x03, 0x05, 0x01,
-      0x09, 0x30, 0x09, 0x31, 0x09, 0x38, 0x15, 0x81, 0x25, 0x7F, 0x75, 0x08,
-      0x95, 0x03, 0x81, 0x06, 0xC0, 0xC0,
-    ]
     // Three buttons, two 16-bit absolute axes (0...32767), one relative wheel.
     // This is an absolute mouse, not a touchscreen or a multi-touch digitizer.
     let absoluteDescriptor: [UInt8] = [
@@ -164,7 +131,7 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
       0x09, 0x38, 0x15, 0x81, 0x25, 0x7F, 0x75, 0x08, 0x95, 0x01, 0x81, 0x06,
       0xC0, 0xC0,
     ]
-    let descriptor = activeAbsolute ? absoluteDescriptor : relativeDescriptor
+    let descriptor = absoluteDescriptor
     let input = CBMutableCharacteristic(
       type: uuid("2A4D"),
       properties: [.read, .notify, .notifyEncryptionRequired], value: nil,
@@ -184,7 +151,7 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
       input,
     ]
     services = [battery, information, hid]
-    status = "正在注册鼠标服务…"
+    status = "Registering mouse service…"
     peripheral.add(services.removeFirst())
   }
 
@@ -194,17 +161,17 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
     guard peripheral === manager else { return }
     guard error == nil else {
       stop()
-      status = "系统拒绝注册蓝牙服务：\(error!.localizedDescription)"
+      status = "Bluetooth service rejected: \(error!.localizedDescription)"
       return
     }
     registeredServices += 1
-    discoveryStatus = "服务注册 \(registeredServices)/3；尚未建立鼠标连接"
+    discoveryStatus = "Services registered: \(registeredServices)/3; waiting for a mouse connection"
     if !services.isEmpty {
       peripheral.add(services.removeFirst())
       return
     }
     peripheral.startAdvertising([
-      CBAdvertisementDataLocalNameKey: activeAbsolute ? "LM Abs" : "LM Mouse",
+      CBAdvertisementDataLocalNameKey: "GT Mouse",
       CBAdvertisementDataServiceUUIDsKey: [
         advertisingCompact ? CBUUID(string: "1812") : uuid("1812")
       ],
@@ -215,10 +182,11 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
     guard peripheral === manager else { return }
     if let error {
       stop()
-      status = "无法广播鼠标：\(error.localizedDescription)"
+      status = "Could not advertise mouse: \(error.localizedDescription)"
     } else {
-      status = "等待 iPhone 配对：\(activeAbsolute ? "LM Abs" : "LM Mouse")（也可能显示 Mac 名称）"
-      discoveryStatus = "服务 3/3 · 系统广播\(peripheral.isAdvertising ? "已开启" : "未开启") · 尚未订阅"
+      status = "Pair on iPhone: GT Mouse (your Mac name may appear instead)"
+      discoveryStatus =
+        "Services 3/3 · advertising \(peripheral.isAdvertising ? "on" : "off") · waiting for subscription"
     }
   }
 
@@ -233,12 +201,11 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
     target = central
     suspended = false
     peripheral.stopAdvertising()
-    transport.release()
     absoluteTransport.reset()
     flush()
     connected = true
-    discoveryStatus = "鼠标输入已订阅"
-    status = "iPhone 已订阅鼠标输入；可开启控制"
+    discoveryStatus = "Mouse input subscribed"
+    status = "Mouse connected. Ready when video is connected."
     onReset?()
   }
 
@@ -251,11 +218,10 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
     }
     target = nil
     connected = false
-    discoveryStatus = "鼠标订阅已断开"
-    transport.release()
+    discoveryStatus = "Mouse disconnected"
     absoluteTransport.release()
     onReset?()
-    status = "手机已断开；停止并重新开始配对可重试"
+    status = "Mouse disconnected. Stop Bluetooth and pair again."
   }
 
   func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
@@ -273,10 +239,7 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
       peripheral.respond(to: request, withResult: .readNotPermitted)
       return
     }
-    let value =
-      activeAbsolute
-      ? absoluteTransport.stateData
-      : MouseReport(buttons: transport.buttons, x: 0, y: 0, wheel: 0).data
+    let value = absoluteTransport.stateData
     guard request.offset <= value.count else {
       peripheral.respond(to: request, withResult: .invalidOffset)
       return
@@ -306,9 +269,9 @@ final class BluetoothMouse: NSObject, ObservableObject, @preconcurrency CBPeriph
       if suspended {
         release()
         onReset?()
-        status = "手机暂停了鼠标输入"
+        status = "iPhone suspended mouse input"
       } else {
-        status = "手机已恢复鼠标输入，请重新开启控制"
+        status = "Mouse resumed. Enable control again."
       }
     }
     peripheral.respond(to: first, withResult: .success)

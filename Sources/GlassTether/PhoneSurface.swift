@@ -5,7 +5,7 @@ import SwiftUI
 
 @MainActor
 final class PhoneSurface: NSView {
-  weak var model: LabModel?
+  weak var model: SessionModel?
   private let video = AVSampleBufferDisplayLayer()
   private var imageSize = CGSize.zero
   private var imageRect = CGRect.zero
@@ -90,7 +90,7 @@ final class PhoneSurface: NSView {
 
   private var canSend: Bool {
     model?.armed == true && model?.fresh == true && model?.bluetooth.connected == true
-      && !blockedUntilExit
+      && !blockedUntilExit && NSApp.isActive && window?.isKeyWindow == true
   }
 
   func releaseInput() {
@@ -129,12 +129,8 @@ final class PhoneSurface: NSView {
     blockedUntilExit = NSEvent.pressedMouseButtons != 0
     lastPoint = convert(event.locationInWindow, from: nil)
     if canSend {
-      NSApp.activate(ignoringOtherApps: true)
-      window?.makeKey()
       window?.makeFirstResponder(self)
-      if model?.bluetooth.activeAbsolute == true,
-        let position = absolutePosition(for: event)
-      {
+      if let position = absolutePosition(for: event) {
         model?.bluetooth.sendAbsolute(buttons: 0, position: position)
       }
     }
@@ -163,18 +159,8 @@ final class PhoneSurface: NSView {
     }
     window?.makeFirstResponder(self)
     syncCursorVisibility()
-    if model?.bluetooth.activeAbsolute == true {
-      if let position = absolutePosition(for: event) {
-        model?.bluetooth.sendAbsolute(buttons: buttons, position: position)
-      }
-      lastPoint = point
-      return
-    }
-    if let lastPoint {
-      model?.bluetooth.send(
-        buttons: buttons,
-        x: (point.x - lastPoint.x) * (model?.sensitivity ?? 1),
-        y: (point.y - lastPoint.y) * (model?.sensitivity ?? 1))
+    if let position = absolutePosition(for: event) {
+      model?.bluetooth.sendAbsolute(buttons: buttons, position: position)
     }
     lastPoint = point
   }
@@ -188,14 +174,11 @@ final class PhoneSurface: NSView {
     }
     let bit = UInt8(1 << event.buttonNumber)
     if down { buttons |= bit } else { buttons &= ~bit }
-    if model?.bluetooth.activeAbsolute == true {
-      if let position = absolutePosition(for: event) {
-        model?.bluetooth.sendAbsolute(buttons: buttons, position: position)
-      }
-    } else {
-      model?.bluetooth.send(buttons: buttons)
+    if let position = absolutePosition(for: event) {
+      model?.bluetooth.sendAbsolute(buttons: buttons, position: position)
     }
   }
+
   override func mouseDown(with event: NSEvent) { button(event, down: true) }
   override func mouseUp(with event: NSEvent) { button(event, down: false) }
   override func rightMouseDown(with event: NSEvent) { button(event, down: true) }
@@ -207,13 +190,9 @@ final class PhoneSurface: NSView {
       event.momentumPhase.isEmpty
     else { return }
     let scale = event.hasPreciseScrollingDeltas ? 0.05 : 1.0
-    if model?.bluetooth.activeAbsolute == true {
-      if let position = absolutePosition(for: event) {
-        model?.bluetooth.sendAbsolute(
-          buttons: buttons, position: position, wheel: event.scrollingDeltaY * scale)
-      }
-    } else {
-      model?.bluetooth.send(buttons: buttons, wheel: event.scrollingDeltaY * scale)
+    if let position = absolutePosition(for: event) {
+      model?.bluetooth.sendAbsolute(
+        buttons: buttons, position: position, wheel: event.scrollingDeltaY * scale)
     }
   }
 
@@ -235,7 +214,7 @@ final class PhoneSurface: NSView {
 }
 
 struct PhonePreview: NSViewRepresentable {
-  let model: LabModel
+  let model: SessionModel
   func makeNSView(context: Context) -> PhoneSurface {
     let surface = PhoneSurface()
     surface.model = model

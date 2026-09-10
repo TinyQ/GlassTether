@@ -6,7 +6,7 @@ struct ScreenCaptureDevice: @unchecked Sendable {
   let value: AVCaptureDevice
 
   // AVCaptureDevice is managed by AVFoundation and is not declared Sendable.
-  // LiveMate only passes this immutable reference into its serial session queue.
+  // GlassTether only passes this immutable reference into its serial session queue.
   init(_ value: AVCaptureDevice) {
     self.value = value
   }
