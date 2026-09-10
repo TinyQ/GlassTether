@@ -4,9 +4,9 @@
 
 A native Mac app for wired iPhone video and Bluetooth absolute mouse control. Move into the visible phone picture to point, click and drag; move out to return to your Mac.
 
-**Local alpha · working name · not publicly released.** This is a release candidate for review, not a claim of universal iPhone support. No license has been granted yet; see [publication status](docs/ORIGIN.md).
+**Private alpha · working name · not publicly released.** This is a release candidate for review, not a claim of universal iPhone support. No license has been granted yet; see [publication status](docs/ORIGIN.md).
 
-[简体中文](README.zh-CN.md) · [Setup](docs/SETUP.md) · [Compatibility](docs/COMPATIBILITY.md) · [Architecture](docs/ARCHITECTURE.md)
+[GitHub repository](https://github.com/TinyQ/GlassTether) · [简体中文](README.zh-CN.md) · [Setup](docs/SETUP.md) · [Compatibility](docs/COMPATIBILITY.md) · [Architecture](docs/ARCHITECTURE.md)
 
 ![Disconnected alpha UI](docs/assets/disconnected-alpha.png)
 

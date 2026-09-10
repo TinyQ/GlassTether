@@ -4,7 +4,7 @@
 
 Native macOS app for wired iPhone video and Bluetooth absolute mouse control. Local, explicit, experimental.
 
-Suggested topics: macos, swift, iphone, bluetooth, hid, screen-mirroring, assistivetouch. Working repository slug: `glasstether` (availability unconfirmed; no destination account supplied).
+Suggested topics: macos, swift, iphone, bluetooth, hid, screen-mirroring, assistivetouch. Repository: [TinyQ/GlassTether](https://github.com/TinyQ/GlassTether), created as a private review repository at the owner’s request. Public visibility and licensing remain pending.
 
 ## First release notes: 0.1.0-alpha.1 (draft)
 
@@ -29,7 +29,7 @@ After coordinated hardware testing, capture a 30–45 second external demonstrat
 - [ ] Choose source-only alpha or sign/notarize binaries with the owner's Developer ID; test on a clean Mac.
 - [ ] Enable private vulnerability reporting and validate issue templates.
 
-There is no remote repository, public release, push, message to others or reserved project name from this work.
+The owner selected TinyQ as the GitHub destination. The project is being synchronized to the private TinyQ/GlassTether repository. No public release or messages to others have been sent. This upload does not settle the pending license, source-rights or hardware acceptance checks.
 
 ## Repeatable release procedure
 

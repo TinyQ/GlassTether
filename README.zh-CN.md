@@ -4,7 +4,7 @@
 
 原生 Mac 应用：通过 USB 显示 iPhone 画面，通过蓝牙绝对鼠标控制手机。鼠标移入真实画面后操作手机，移出后回到 Mac。
 
-这是本地 alpha 审阅版，名称暂定，尚未公开发布或授予开源许可证。不能承诺所有 iPhone / iOS 组合兼容。
+这是 alpha 审阅版，已上传至 [TinyQ/GlassTether 私有仓库](https://github.com/TinyQ/GlassTether)，名称暂定，尚未公开发布或授予开源许可证。不能承诺所有 iPhone / iOS 组合兼容。
 
 [English](README.md) · [中文连接指南](docs/SETUP.zh-CN.md) · [兼容性与验收](docs/COMPATIBILITY.md)
 
